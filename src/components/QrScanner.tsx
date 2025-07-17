@@ -23,6 +23,7 @@ export default function QrScanner() {
   const [scanCount, setScanCount] = useState(0);
   const [uploadedImage, setUploadedImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState('camera');
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
   // 카메라 목록 가져오기
@@ -51,6 +52,52 @@ export default function QrScanner() {
 
     getCameras();
   }, []);
+
+  // 전역 클립보드 붙여넣기 이벤트 리스너
+  useEffect(() => {
+    const handleGlobalPaste = (e: KeyboardEvent) => {
+      // Ctrl+V 또는 Cmd+V가 눌렸을 때
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        // 현재 업로드 탭에 있을 때만 처리
+        if (activeTab === 'upload') {
+          // 클립보드 데이터를 직접 읽기
+          navigator.clipboard.read().then(items => {
+            for (const item of items) {
+              for (const type of item.types) {
+                if (type.startsWith('image/')) {
+                  item.getType(type).then(blob => {
+                    const file = new File([blob], 'clipboard-image', { type });
+                    processImageFile(file);
+                    toast({
+                      title: '클립보드에서 이미지 붙여넣기',
+                      description: '이미지가 성공적으로 붙여넣어졌습니다.'
+                    });
+                  });
+                  return;
+                }
+              }
+            }
+            toast({
+              title: '클립보드에 이미지가 없습니다',
+              description: '이미지를 복사한 후 다시 시도해주세요.',
+              variant: 'destructive'
+            });
+          }).catch(() => {
+            toast({
+              title: '클립보드 접근 실패',
+              description: '클립보드에 접근할 수 없습니다.',
+              variant: 'destructive'
+            });
+          });
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalPaste);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalPaste);
+    };
+  }, [activeTab]);
 
   // QR 스캐너 초기화 (카메라 모드용)
   useEffect(() => {
@@ -163,11 +210,8 @@ export default function QrScanner() {
     }
   };
 
-  // 파일 업로드 처리
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  // 공통 이미지 처리 함수
+  const processImageFile = async (file: File) => {
     // 파일 타입 검사
     if (!file.type.startsWith('image/')) {
       toast({
@@ -188,7 +232,7 @@ export default function QrScanner() {
       handleQrResult(result);
       
       toast({
-        title: '이미지 업로드 성공',
+        title: '이미지 처리 성공',
         description: 'QR 코드를 스캔했습니다.'
       });
     } catch (error) {
@@ -197,6 +241,69 @@ export default function QrScanner() {
         title: 'QR 코드를 찾을 수 없음',
         description: '업로드한 이미지에서 QR 코드를 찾을 수 없습니다.',
         variant: 'destructive'
+      });
+    }
+  };
+
+  // 파일 업로드 처리
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await processImageFile(file);
+  };
+
+  // 드래그 앤 드롭 처리
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+
+    if (!imageFile) {
+      toast({
+        title: '이미지 파일이 없습니다',
+        description: '이미지 파일을 드래그해주세요.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    await processImageFile(imageFile);
+  };
+
+  // 클립보드 붙여넣기 처리
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+
+    if (!imageItem) {
+      toast({
+        title: '클립보드에 이미지가 없습니다',
+        description: '이미지를 복사한 후 붙여넣어주세요.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const file = imageItem.getAsFile();
+    if (file) {
+      await processImageFile(file);
+      toast({
+        title: '클립보드에서 이미지 붙여넣기',
+        description: '이미지가 성공적으로 붙여넣어졌습니다.'
       });
     }
   };
@@ -317,29 +424,79 @@ export default function QrScanner() {
                 {!uploadedImage ? (
                   <div 
                     onClick={triggerFileUpload}
-                    className="relative bg-muted rounded-lg overflow-hidden aspect-square border-2 border-dashed border-border hover:border-primary/50 transition-colors cursor-pointer group"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onPaste={handlePaste}
+                    tabIndex={0}
+                    className={`relative bg-muted rounded-lg overflow-hidden aspect-square border-2 border-dashed transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                      isDragging 
+                        ? 'border-primary bg-primary/5 scale-105' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center space-y-4">
-                        <FileImage className="w-16 h-16 mx-auto text-muted-foreground group-hover:text-primary transition-colors" />
-                        <div>
-                          <p className="text-muted-foreground group-hover:text-foreground transition-colors">
-                            클릭하여 QR 코드 이미지 업로드
-                          </p>
-                          <p className="text-sm text-muted-foreground/70">
-                            JPG, PNG, GIF 등 지원
-                          </p>
-                        </div>
+                        {isDragging ? (
+                          <>
+                            <Upload className="w-16 h-16 mx-auto text-primary animate-bounce" />
+                            <div>
+                              <p className="text-primary font-medium">
+                                이미지를 여기에 놓아주세요
+                              </p>
+                              <p className="text-sm text-primary/70">
+                                QR 코드 이미지를 드롭하세요
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <FileImage className="w-16 h-16 mx-auto text-muted-foreground group-hover:text-primary transition-colors" />
+                            <div>
+                              <p className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">
+                                QR 코드 이미지를 업로드하세요
+                              </p>
+                              <div className="text-sm text-muted-foreground/70 space-y-1">
+                                <p>• 클릭하여 파일 선택</p>
+                                <p>• 드래그 앤 드롭</p>
+                                <p>• Ctrl+V로 붙여넣기</p>
+                                <p className="text-xs">(JPG, PNG, GIF 등 지원)</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="relative bg-muted rounded-lg overflow-hidden aspect-square">
+                  <div 
+                    className="relative bg-muted rounded-lg overflow-hidden aspect-square group cursor-pointer"
+                    onClick={triggerFileUpload}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onPaste={handlePaste}
+                    tabIndex={0}
+                  >
                     <img
                       src={uploadedImage}
                       alt="업로드된 QR 코드"
                       className="w-full h-full object-contain"
                     />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="text-center text-white">
+                        <Upload className="w-8 h-8 mx-auto mb-2" />
+                        <p className="text-sm">다른 이미지로 변경</p>
+                      </div>
+                    </div>
+                    {isDragging && (
+                      <div className="absolute inset-0 bg-primary/20 border-2 border-primary border-dashed flex items-center justify-center">
+                        <div className="text-center text-primary">
+                          <Upload className="w-8 h-8 mx-auto mb-2 animate-bounce" />
+                          <p className="text-sm font-medium">새 이미지로 교체</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

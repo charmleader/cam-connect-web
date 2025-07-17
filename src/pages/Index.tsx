@@ -21,10 +21,12 @@ const Index = () => {
             <h3 className="text-lg font-semibold mb-3">사용 방법</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>📷 <strong>카메라 스캔:</strong> 실시간으로 QR 코드를 스캔</p>
-              <p>🖼️ <strong>이미지 업로드:</strong> QR 코드 사진을 업로드하여 스캔</p>
+              <p>🖼️ <strong>이미지 업로드:</strong> 3가지 방법으로 QR 코드 이미지 업로드</p>
+              <p>　　• 클릭하여 파일 선택</p>
+              <p>　　• 드래그 앤 드롭으로 이미지 끌어다 놓기</p>
+              <p>　　• Ctrl+V (Windows) / Cmd+V (Mac)로 클립보드에서 붙여넣기</p>
               <p>🎯 카메라가 여러 개라면 원하는 카메라를 선택하세요</p>
               <p>🔗 스캔된 URL로 자동으로 새 탭이 열립니다</p>
-              <p>✅ HTTP/HTTPS 웹 URL만 지원됩니다</p>
             </div>
           </div>
         </div>
