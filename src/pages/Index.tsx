@@ -9,7 +9,7 @@ const Index = () => {
             QR 코드 웹 스캐너
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            카메라로 QR 코드를 스캔하여 웹사이트에 바로 접속하세요. 
+            카메라로 실시간 QR 코드 스캔하거나, QR 코드 이미지를 업로드하여 웹사이트에 바로 접속하세요. 
             여러 카메라가 있는 경우 원하는 카메라를 선택할 수 있습니다.
           </p>
         </div>
@@ -20,11 +20,11 @@ const Index = () => {
           <div className="bg-card/50 backdrop-blur-sm rounded-lg p-6 max-w-md mx-auto">
             <h3 className="text-lg font-semibold mb-3">사용 방법</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>1. 카메라 권한을 허용해주세요</p>
-              <p>2. 여러 카메라가 있다면 원하는 카메라를 선택하세요</p>
-              <p>3. "스캔 시작" 버튼을 클릭하세요</p>
-              <p>4. QR 코드를 카메라에 비춰주세요</p>
-              <p>5. 자동으로 웹사이트가 열립니다</p>
+              <p>📷 <strong>카메라 스캔:</strong> 실시간으로 QR 코드를 스캔</p>
+              <p>🖼️ <strong>이미지 업로드:</strong> QR 코드 사진을 업로드하여 스캔</p>
+              <p>🎯 카메라가 여러 개라면 원하는 카메라를 선택하세요</p>
+              <p>🔗 스캔된 URL로 자동으로 새 탭이 열립니다</p>
+              <p>✅ HTTP/HTTPS 웹 URL만 지원됩니다</p>
             </div>
           </div>
         </div>
