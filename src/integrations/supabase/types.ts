@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      short_links: {
+        Row: {
+          click_count: number | null
+          created_at: string
+          id: string
+          original_url: string
+          short_code: string
+          user_id: string | null
+        }
+        Insert: {
+          click_count?: number | null
+          created_at?: string
+          id?: string
+          original_url: string
+          short_code: string
+          user_id?: string | null
+        }
+        Update: {
+          click_count?: number | null
+          created_at?: string
+          id?: string
+          original_url?: string
+          short_code?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       symptom_responses: {
         Row: {
           class_number: number
